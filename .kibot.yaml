@@ -1,0 +1,145 @@
+kibot:
+  version: 1
+
+global:
+  output: '%f-%i.%x'
+
+outputs:
+
+  # ── Gerbers (JLCPCB 2-layer) ──────────────────────────────────────────────
+  - name: gerbers
+    comment: "Gerber files for JLCPCB"
+    type: gerber
+    dir: output/fab/gerbers
+    layers:
+      - F.Cu
+      - B.Cu
+      - F.Paste
+      - B.Paste
+      - F.Silkscreen
+      - B.Silkscreen
+      - F.Mask
+      - B.Mask
+      - Edge.Cuts
+    options:
+      use_gerber_x2_attributes: true
+      use_gerber_net_attributes: false
+      create_gerber_job_file: false
+      use_protel_extensions: true
+      gerber_precision: 4.6
+      subtract_mask_from_silk: false
+      line_width: 0.1
+      tent_vias: true
+
+  # ── Drill ─────────────────────────────────────────────────────────────────
+  - name: drill
+    comment: "Excellon drill files"
+    type: excellon
+    dir: output/fab/gerbers
+    options:
+      metric_units: true
+      zeros_format: SUPPRESS_LEADING
+      left_digits: 3
+      right_digits: 3
+      mirror_y_axis: false
+      minimal_header: false
+      pth_and_npth_single_file: false
+
+  # ── CPL (JLCPCB PCBA pick & place) ────────────────────────────────────────
+  - name: cpl
+    comment: "Component placement for JLCPCB PCBA"
+    type: position
+    dir: output/fab/cpl
+    options:
+      format: CSV
+      units: millimeters
+      separate_files_for_front_and_back: false
+      only_smd: true
+      columns:
+        - id: Ref
+          name: Designator
+        - id: Val
+          name: Val
+        - id: Package
+          name: Package
+        - id: PosX
+          name: Mid X
+        - id: PosY
+          name: Mid Y
+        - id: Rot
+          name: Rotation
+        - id: Side
+          name: Layer
+
+  # ── BOM CSV ───────────────────────────────────────────────────────────────
+  - name: bom_csv
+    comment: "Bill of Materials (CSV)"
+    type: bom
+    dir: output/fab/bom
+    options:
+      output: bom.csv
+      format: CSV
+      group_fields: ['Value', 'Footprint']
+      columns:
+        - Row
+        - References
+        - Quantity Per PCB
+        - Value
+        - Footprint
+
+  # ── BOM JLCPCB format ─────────────────────────────────────────────────────
+  - name: bom_jlcpcb
+    comment: "BOM in JLCPCB upload format"
+    type: bom
+    dir: output/fab/bom
+    options:
+      output: bom_jlcpcb.csv
+      format: CSV
+      group_fields: ['Value', 'Footprint']
+      columns:
+        - id: References
+          name: Designator
+        - id: Quantity Per PCB
+          name: Qty
+        - id: Value
+          name: Comment
+        - id: Footprint
+          name: Footprint
+
+  # ── Interactive HTML BOM ──────────────────────────────────────────────────
+  - name: ibom
+    comment: "Interactive HTML BOM"
+    type: ibom
+    dir: output/ibom
+    options:
+      dark_mode: false
+      show_fabrication: false
+      include_tracks: true
+      include_nets: true
+
+  # ── 3D renders ────────────────────────────────────────────────────────────
+  - name: render_top
+    comment: "3D render — top"
+    type: render_3d
+    dir: output/render
+    options:
+      output: render_top.png
+      ray_tracing: false
+      orthographic: false
+      view: top
+      width: 1920
+      height: 1080
+      zoom: 2
+
+  - name: render_bottom
+    comment: "3D render — bottom"
+    type: render_3d
+    dir: output/render
+    options:
+      output: render_bottom.png
+      ray_tracing: false
+      orthographic: false
+      view: bottom
+      width: 1920
+      height: 1080
+      zoom: 2

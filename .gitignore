@@ -1,0 +1,14 @@
+# KiCad lock / backup files
+*.lck
+*-backups/
+_autosave-*
+*.bak
+*.kicad_pcb-bak
+*.kicad_sch-bak
+
+# Fabrication outputs (rebuild on demand)
+output/fab/
+
+# Python
+__pycache__/
+*.pyc
