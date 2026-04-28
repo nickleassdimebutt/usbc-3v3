@@ -93,7 +93,10 @@ def _build_one(output_v: float, project_root: Path, args: argparse.Namespace) ->
         render_dir = project_root / "output/render"
         docs_dir = project_root / "output/docs"
         print(f"\n  → 3D renders: {render_dir.relative_to(PROJECT_DIR)}/")
-        from circuit_toolkit.builders import render_pcb, build_datasheet, plot_pcbdraw
+        from circuit_toolkit.builders import (
+            render_pcb, build_datasheet, plot_pcbdraw,
+            build_hierarchical_schematic,
+        )
         render_pcb(pcb_path, render_dir, sides=("top", "bottom"))
 
         print(f"  → pcbdraw stylized views")
@@ -107,6 +110,14 @@ def _build_one(output_v: float, project_root: Path, args: argparse.Namespace) ->
             pcbdraw_front = None
             pcbdraw_back = None
 
+        print(f"  → hierarchical schematics")
+        hier_dir = docs_dir / "hierarchical"
+        try:
+            schematic_blocks = build_hierarchical_schematic(board, hier_dir)
+        except Exception as e:
+            print(f"     [warning] hierarchical schematic failed: {e}")
+            schematic_blocks = None
+
         pdf_path = docs_dir / "datasheet.pdf"
         print(f"  → Datasheet PDF: {pdf_path.relative_to(PROJECT_DIR)}")
         build_datasheet(
@@ -118,6 +129,7 @@ def _build_one(output_v: float, project_root: Path, args: argparse.Namespace) ->
             pcbdraw_front=pcbdraw_front,
             pcbdraw_back=pcbdraw_back,
             schematic_svg=schematic_svg,
+            schematic_blocks=schematic_blocks,
             bringup_md=PROJECT_DIR / "bringup.md",
             sim_dir=sim_dir if args.sim else None,
         )

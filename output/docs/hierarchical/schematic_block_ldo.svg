@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:s="https://github.com/nturley/netlistsvg" width="119" height="469">
+  <style>svg {
+    stroke:#000;
+    fill:none;
+  }
+  text {
+    fill:#000;
+    stroke:none;
+    font-size:10px;
+    font-weight: bold;
+    font-family: "Courier New", monospace;
+  }
+  .nodelabel {
+    text-anchor: middle;
+  }
+  .inputPortLabel {
+    text-anchor: end;
+  }
+  .splitjoinBody {
+    fill:#000;
+  }</style>
+  <g s:type="generic" transform="translate(77,198)" s:width="30" s:height="40" id="cell_U1">
+    <text x="15" y="-4" class="nodelabel cell_U1" s:attribute="ref">AMS1117-3.3</text>
+    <rect width="30" height="80" s:generic="body" class="cell_U1"/>
+    <g transform="translate(0,10)" s:x="0" s:y="10" s:pid="in0" id="port_U1~GND">
+      <text x="-3" y="-4" class="inputPortLabel cell_U1">GND</text>
+    </g>
+    <g transform="translate(0,30)" s:x="0" s:y="10" s:pid="in0" id="port_U1~VOUT">
+      <text x="-3" y="-4" class="inputPortLabel cell_U1">VOUT</text>
+    </g>
+    <g transform="translate(0,50)" s:x="0" s:y="10" s:pid="in0" id="port_U1~VIN">
+      <text x="-3" y="-4" class="inputPortLabel cell_U1">VIN</text>
+    </g>
+    <g transform="translate(0,70)" s:x="0" s:y="10" s:pid="in0" id="port_U1~TAB">
+      <text x="-3" y="-4" class="inputPortLabel cell_U1">TAB</text>
+    </g>
+  </g>
+  <g s:type="generic" transform="translate(77,414)" s:width="30" s:height="40" id="cell_C1">
+    <text x="15" y="-4" class="nodelabel cell_C1" s:attribute="ref">10uF</text>
+    <rect width="30" height="40" s:generic="body" class="cell_C1"/>
+    <g transform="translate(0,10)" s:x="0" s:y="10" s:pid="in0" id="port_C1~1">
+      <text x="-3" y="-4" class="inputPortLabel cell_C1">1</text>
+    </g>
+    <g transform="translate(0,30)" s:x="0" s:y="10" s:pid="in0" id="port_C1~2">
+      <text x="-3" y="-4" class="inputPortLabel cell_C1">2</text>
+    </g>
+  </g>
+  <g s:type="generic" transform="translate(77,326)" s:width="30" s:height="40" id="cell_C2">
+    <text x="15" y="-4" class="nodelabel cell_C2" s:attribute="ref">10uF</text>
+    <rect width="30" height="40" s:generic="body" class="cell_C2"/>
+    <g transform="translate(0,10)" s:x="0" s:y="10" s:pid="in0" id="port_C2~1">
+      <text x="-3" y="-4" class="inputPortLabel cell_C2">1</text>
+    </g>
+    <g transform="translate(0,30)" s:x="0" s:y="10" s:pid="in0" id="port_C2~2">
+      <text x="-3" y="-4" class="inputPortLabel cell_C2">2</text>
+    </g>
+  </g>
+  <g s:type="generic" transform="translate(77,110)" s:width="30" s:height="40" id="cell_C3">
+    <text x="15" y="-4" class="nodelabel cell_C3" s:attribute="ref">10uF</text>
+    <rect width="30" height="40" s:generic="body" class="cell_C3"/>
+    <g transform="translate(0,10)" s:x="0" s:y="10" s:pid="in0" id="port_C3~1">
+      <text x="-3" y="-4" class="inputPortLabel cell_C3">1</text>
+    </g>
+    <g transform="translate(0,30)" s:x="0" s:y="10" s:pid="in0" id="port_C3~2">
+      <text x="-3" y="-4" class="inputPortLabel cell_C3">2</text>
+    </g>
+  </g>
+  <g s:type="generic" transform="translate(77,22)" s:width="30" s:height="40" id="cell_C4">
+    <text x="15" y="-4" class="nodelabel cell_C4" s:attribute="ref">100nF</text>
+    <rect width="30" height="40" s:generic="body" class="cell_C4"/>
+    <g transform="translate(0,10)" s:x="0" s:y="10" s:pid="in0" id="port_C4~1">
+      <text x="-3" y="-4" class="inputPortLabel cell_C4">1</text>
+    </g>
+    <g transform="translate(0,30)" s:x="0" s:y="10" s:pid="in0" id="port_C4~2">
+      <text x="-3" y="-4" class="inputPortLabel cell_C4">2</text>
+    </g>
+  </g>
+  <line x1="22" x2="22" y1="140.5" y2="208.5" class="net_2"/>
+  <circle cx="22" cy="140.5" r="2" style="fill:#000" class="net_2"/>
+  <circle cx="22" cy="208.5" r="2" style="fill:#000" class="net_2"/>
+  <line x1="22" x2="77" y1="208.5" y2="208.5" class="net_2"/>
+  <line x1="22" x2="22" y1="140.5" y2="444.5" class="net_2"/>
+  <line x1="22" x2="77" y1="444.5" y2="444.5" class="net_2"/>
+  <line x1="22" x2="22" y1="140.5" y2="356.5" class="net_2"/>
+  <circle cx="22" cy="356.5" r="2" style="fill:#000" class="net_2"/>
+  <line x1="22" x2="77" y1="356.5" y2="356.5" class="net_2"/>
+  <line x1="22" x2="77" y1="140.5" y2="140.5" class="net_2"/>
+  <line x1="22" x2="22" y1="140.5" y2="52.5" class="net_2"/>
+  <line x1="22" x2="77" y1="52.5" y2="52.5" class="net_2"/>
+  <line x1="42" x2="42" y1="32.5" y2="228.5" class="net_3"/>
+  <circle cx="42" cy="228.5" r="2" style="fill:#000" class="net_3"/>
+  <line x1="42" x2="77" y1="228.5" y2="228.5" class="net_3"/>
+  <line x1="42" x2="42" y1="32.5" y2="268.5" class="net_3"/>
+  <line x1="42" x2="77" y1="268.5" y2="268.5" class="net_3"/>
+  <line x1="42" x2="42" y1="32.5" y2="120.5" class="net_3"/>
+  <circle cx="42" cy="120.5" r="2" style="fill:#000" class="net_3"/>
+  <line x1="42" x2="77" y1="120.5" y2="120.5" class="net_3"/>
+  <line x1="42" x2="77" y1="32.5" y2="32.5" class="net_3"/>
+  <line x1="32" x2="32" y1="336.5" y2="248.5" class="net_4"/>
+  <circle cx="32" cy="336.5" r="2" style="fill:#000" class="net_4"/>
+  <line x1="32" x2="77" y1="248.5" y2="248.5" class="net_4"/>
+  <line x1="32" x2="32" y1="336.5" y2="424.5" class="net_4"/>
+  <line x1="32" x2="77" y1="424.5" y2="424.5" class="net_4"/>
+  <line x1="32" x2="77" y1="336.5" y2="336.5" class="net_4"/>
+</svg>
