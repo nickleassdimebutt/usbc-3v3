@@ -1,0 +1,10 @@
+# Binary files — never apply CRLF conversion or line-ending normalization
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.kicad_pcb -text
+*.kicad_pro -text
+*.kicad_sch -text
+*.zip binary
+*.gz binary
