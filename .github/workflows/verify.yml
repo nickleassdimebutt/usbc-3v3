@@ -31,6 +31,7 @@ jobs:
             kicad-templates \
             ngspice \
             libngspice0 \
+            libngspice0-dev \
             nodejs \
             npm \
             poppler-utils \
