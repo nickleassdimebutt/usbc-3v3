@@ -20,9 +20,15 @@ jobs:
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-9.0-releases
           sudo apt-get update
+          # Install full library set (footprints + symbols + 3D models),
+          # not just kicad-libraries — the metapackage doesn't always pull
+          # the connector/HRO footprints we use.
           sudo apt-get install -y --no-install-recommends \
             kicad \
             kicad-libraries \
+            kicad-footprints \
+            kicad-symbols \
+            kicad-templates \
             ngspice \
             libngspice0 \
             nodejs \
@@ -32,6 +38,15 @@ jobs:
             libcairo2-dev \
             libgirepository1.0-dev \
             pkg-config
+
+      - name: Sanity check footprint library paths
+        run: |
+          echo "Searching for HRO USB-C footprint..."
+          find /usr/share/kicad -name 'USB_C_Receptacle_HRO*' 2>/dev/null | head
+          echo "Connector_USB.pretty contents:"
+          ls /usr/share/kicad/footprints/Connector_USB.pretty/ 2>/dev/null | head -20
+          echo "KICAD_FOOTPRINT_DIR auto-detect target:"
+          ls -la /usr/share/kicad/footprints/ 2>/dev/null | head -5
 
       - name: Install netlistsvg
         run: sudo npm install -g netlistsvg
