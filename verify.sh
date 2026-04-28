@@ -39,14 +39,14 @@ check "DRC" "$KICAD_CLI" pcb drc \
   --units mm \
   "$PCB"
 
-# Parse DRC report for actual violations
+# Parse DRC report — count errors vs warnings separately
 if [ -f output/drc/drc_report.txt ]; then
-  violations=$(grep -E "Found [^0].*violation" output/drc/drc_report.txt || true)
-  unconnected=$(grep -E "Found [^0].*unconnected" output/drc/drc_report.txt || true)
-  if [ -n "$violations" ] || [ -n "$unconnected" ]; then
-    echo "  DRC violations:"
-    [ -n "$violations" ]   && echo "    $violations"
-    [ -n "$unconnected" ]  && echo "    $unconnected"
+  errors=$(grep -c "; error" output/drc/drc_report.txt || true)
+  warnings=$(grep -c "; warning" output/drc/drc_report.txt || true)
+  unconn_line=$(grep -E "Found [^0].*unconnected" output/drc/drc_report.txt || true)
+  echo "  DRC: ${errors:-0} errors, ${warnings:-0} warnings"
+  if [ "${errors:-0}" -gt 0 ] || [ -n "$unconn_line" ]; then
+    [ -n "$unconn_line" ] && echo "    $unconn_line"
     FAILS=$((FAILS+1)); PASSES=$((PASSES-1))
   fi
 fi

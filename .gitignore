@@ -12,3 +12,9 @@ output/fab/
 # Python
 __pycache__/
 *.pyc
+
+# Local history (VS Code)
+.history/
+
+# Stale legacy DRC report (we use output/drc/ now)
+/drc_report.txt
