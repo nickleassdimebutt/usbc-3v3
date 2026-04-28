@@ -8,9 +8,11 @@ _autosave-*
 
 # Fabrication outputs (rebuild on demand)
 output/fab/
+variants/*/output/fab/
 
 # Datasheet preview pages (regenerate on demand for QA via pdftoppm)
 output/docs/preview/
+variants/*/output/docs/preview/
 
 # Python
 __pycache__/

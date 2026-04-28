@@ -1,12 +1,17 @@
 """USB-C → 3.3V LDO — orchestrator.
 
-Reads circuit.py (topology) + layout.py (positions/routes) and generates the
-fabrication / documentation deliverables. Modes (composable):
+One source builds an entire AMS1117-family product line. Modes (composable):
 
-    build.py                    PCB + schematic SVG + BOM (default)
-    build.py --datasheet        adds 3D renders + LT-style PDF
-    build.py --sim              adds 6 SPICE pre-flight plots
-    build.py --datasheet --sim  full v2 set, all artefacts in one pass
+    build.py                          PCB + schematic SVG + BOM (default 3.3 V)
+    build.py --datasheet              adds 3D renders + LT-style PDF
+    build.py --sim                    adds 6 SPICE pre-flight plots
+    build.py --variants 3.3 5.0 1.8   builds three boards, one per output V
+    build.py --datasheet --sim --variants 3.3 5.0 1.8
+                                       full v2 set, every variant, in one pass
+
+Variant outputs land at ``variants/<board-name>/{<name>.kicad_pcb, output/...}``.
+The default 3.3 V build (no --variants) writes to the project root for
+back-compat with the canonical usbc-3v3 design.
 
 Run with KiCad's bundled Python so pcbnew is available:
     "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe" build.py [flags]
@@ -22,7 +27,6 @@ from circuit_toolkit.fab import write_bom
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
-PCB_PATH = PROJECT_DIR / "usbc-3v3.kicad_pcb"
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
@@ -30,47 +34,53 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--datasheet", action="store_true",
                    help="render 3D PNGs and assemble the LT-style datasheet PDF")
     p.add_argument("--sim", action="store_true",
-                   help="run six SPICE pre-flight analyses (transient, "
-                        "load step, line/load reg, temp sweep, Monte Carlo)")
+                   help="run six SPICE pre-flight analyses")
     p.add_argument("--monte-carlo-runs", type=int, default=100,
                    help="Monte Carlo iteration count (default 100)")
+    p.add_argument("--variants", nargs="+", type=float, default=None,
+                   metavar="V",
+                   help="build one board per listed output voltage (e.g. "
+                        "--variants 3.3 5.0 1.8). Without this flag, "
+                        "builds 3.3 V into the project root.")
     return p.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = _parse_args(sys.argv[1:] if argv is None else argv)
-    modes = ["pcb", "schematic", "bom"] \
-        + (["sim"] if args.sim else []) \
-        + (["datasheet"] if args.datasheet else [])
-    print(f"=== usbc-3v3 build  ({', '.join(modes)}) ===")
+def _build_one(output_v: float, project_root: Path, args: argparse.Namespace) -> int:
+    """Build a single variant. `project_root` is where artefacts land
+    (PCB at ``<root>/<name>.kicad_pcb``, outputs under ``<root>/output/``)."""
+    board = circuit.build(output_v=output_v)
+    out_net = circuit.output_net_name(output_v)
+    layout_data = layout.get_layout(output_net=out_net)
 
-    board = circuit.build()
+    pcb_path = project_root / f"{board.name}.kicad_pcb"
+    project_root.mkdir(parents=True, exist_ok=True)
+
     print(f"  topology: {board}")
-
-    print(f"\n  → PCB: {PCB_PATH.name}")
+    print(f"  rail: {out_net}")
+    print(f"  → PCB: {pcb_path.relative_to(PROJECT_DIR)}")
     build_pcb(
         board,
-        positions=layout.positions,
-        output=PCB_PATH,
-        tracks=layout.tracks,
-        vias=layout.vias,
-        zones=layout.zones,
-        pad_zone_full=layout.pad_zone_full,
-        ref_text_overrides=layout.ref_text_overrides,
-        outline=layout.outline,
+        positions=layout_data["positions"],
+        output=pcb_path,
+        tracks=layout_data["tracks"],
+        vias=layout_data["vias"],
+        zones=layout_data["zones"],
+        pad_zone_full=layout_data["pad_zone_full"],
+        ref_text_overrides=layout_data["ref_text_overrides"],
+        outline=layout_data["outline"],
     )
 
-    schematic_svg = PROJECT_DIR / "output/docs/schematic.svg"
+    schematic_svg = project_root / "output/docs/schematic.svg"
     print(f"  → Schematic: {schematic_svg.relative_to(PROJECT_DIR)}")
     try:
         build_schematic(board, schematic_svg)
     except Exception as e:
         print(f"     [warning] schematic generation failed: {e}")
 
-    print(f"  → BOM: output/fab/bom/")
-    write_bom(board, PROJECT_DIR / "output/fab/bom")
+    print(f"  → BOM: {(project_root / 'output/fab/bom').relative_to(PROJECT_DIR)}/")
+    write_bom(board, project_root / "output/fab/bom")
 
-    sim_dir = PROJECT_DIR / "output/sim"
+    sim_dir = project_root / "output/sim"
     if args.sim:
         print(f"\n  → SPICE pre-flight: {sim_dir.relative_to(PROJECT_DIR)}/")
         from circuit_toolkit.sim import simulate_all
@@ -80,18 +90,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"     {name:<14} {p.name}")
 
     if args.datasheet:
-        render_dir = PROJECT_DIR / "output/render"
-        docs_dir = PROJECT_DIR / "output/docs"
+        render_dir = project_root / "output/render"
+        docs_dir = project_root / "output/docs"
         print(f"\n  → 3D renders: {render_dir.relative_to(PROJECT_DIR)}/")
         from circuit_toolkit.builders import render_pcb, build_datasheet
-        render_pcb(PCB_PATH, render_dir, sides=("top", "bottom"))
+        render_pcb(pcb_path, render_dir, sides=("top", "bottom"))
 
         pdf_path = docs_dir / "datasheet.pdf"
         print(f"  → Datasheet PDF: {pdf_path.relative_to(PROJECT_DIR)}")
         build_datasheet(
             board, pdf_path,
             rev="0.1",
-            description="USB-C → 3.3V LDO power board",
+            description=f"USB-C → {output_v:g} V LDO power board",
             render_top=render_dir / "render_top.png",
             render_bottom=render_dir / "render_bottom.png",
             schematic_svg=schematic_svg,
@@ -99,8 +109,35 @@ def main(argv: list[str] | None = None) -> int:
             sim_dir=sim_dir if args.sim else None,
         )
 
-    print("\nDone. Run ./verify.sh to DRC + fab outputs.")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(sys.argv[1:] if argv is None else argv)
+
+    targets: list[tuple[float, Path]]
+    if args.variants:
+        targets = [
+            (v, PROJECT_DIR / "variants" / circuit.variant_name(v))
+            for v in args.variants
+        ]
+    else:
+        # back-compat: default 3.3V at project root
+        targets = [(3.3, PROJECT_DIR)]
+
+    modes = ["pcb", "schematic", "bom"] \
+        + (["sim"] if args.sim else []) \
+        + (["datasheet"] if args.datasheet else [])
+    print(f"=== usbc-3v3 build  ({', '.join(modes)})  "
+          f"variants: {[circuit.variant_name(v) for v, _ in targets]} ===")
+
+    rc = 0
+    for output_v, project_root in targets:
+        print(f"\n--- {circuit.variant_name(output_v)} ---")
+        rc |= _build_one(output_v, project_root, args)
+
+    print("\nDone. Run ./verify.sh to DRC + fab outputs.")
+    return rc
 
 
 if __name__ == "__main__":
