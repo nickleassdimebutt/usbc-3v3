@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# verify.sh — DRC (kicad-cli) + fab outputs (KiBot + pcbnew BOM)
-# Usage: ./verify.sh         — DRC only
-#        ./verify.sh --fab   — DRC + gerbers/drill/CPL/BOM
-#        ./verify.sh --all   — above + iBOM + 3D renders (needs extra deps)
+# verify.sh — DRC (kicad-cli) + fab + datasheet + SPICE pre-flight checks.
+# Usage: ./verify.sh              — DRC only
+#        ./verify.sh --fab        — DRC + gerbers/drill/CPL/BOM
+#        ./verify.sh --datasheet  — DRC + 3D renders + datasheet PDF
+#        ./verify.sh --sim        — DRC + SPICE pre-flight (6 analyses)
+#        ./verify.sh --all        — fab + datasheet + sim + iBOM
+# Modes are composable; for example: ./verify.sh --datasheet --sim
 set -euo pipefail
 
 KICAD_CLI="C:/Program Files/KiCad/10.0/bin/kicad-cli.exe"
@@ -51,7 +54,18 @@ if [ -f output/drc/drc_report.txt ]; then
   fi
 fi
 
-if [[ "${1:-}" == "--fab" ]] || [[ "${1:-}" == "--all" ]]; then
+# Parse mode flags from any position (composable)
+WANT_FAB=0; WANT_DATASHEET=0; WANT_SIM=0; WANT_EXTRA=0
+for arg in "$@"; do
+  case "$arg" in
+    --fab)        WANT_FAB=1 ;;
+    --datasheet)  WANT_DATASHEET=1 ;;
+    --sim)        WANT_SIM=1 ;;
+    --all)        WANT_FAB=1; WANT_DATASHEET=1; WANT_SIM=1; WANT_EXTRA=1 ;;
+  esac
+done
+
+if [[ "$WANT_FAB" -eq 1 ]]; then
   echo "--- fab outputs ---"
   mkdir -p output/fab/gerbers output/fab/cpl output/fab/bom
   kibot_out gerbers
@@ -60,11 +74,39 @@ if [[ "${1:-}" == "--fab" ]] || [[ "${1:-}" == "--all" ]]; then
   check "BOM" "$KICAD_PY" scripts/gen_bom.py
 fi
 
-if [[ "${1:-}" == "--all" ]]; then
+if [[ "$WANT_SIM" -eq 1 ]]; then
+  echo "--- SPICE pre-flight ---"
+  mkdir -p output/sim
+  check "sim (6 plots)" "$KICAD_PY" build.py --sim
+  for name in transient load_step line_reg load_reg temp_sweep monte_carlo; do
+    if [[ -f "output/sim/${name}.png" ]]; then
+      echo "  ✓ output/sim/${name}.png"
+    else
+      echo "  ✗ output/sim/${name}.png  (missing)"; FAILS=$((FAILS+1))
+    fi
+  done
+fi
+
+if [[ "$WANT_DATASHEET" -eq 1 ]]; then
+  echo "--- datasheet ---"
+  mkdir -p output/render output/docs
+  if [[ "$WANT_SIM" -eq 1 ]]; then
+    # sim already ran above — re-run build with --datasheet to embed sim plots.
+    check "datasheet (with sim plots)" "$KICAD_PY" build.py --datasheet --sim
+  else
+    check "datasheet" "$KICAD_PY" build.py --datasheet
+  fi
+  if [[ -f "output/docs/datasheet.pdf" ]]; then
+    size_kb=$(( $(wc -c <"output/docs/datasheet.pdf") / 1024 ))
+    echo "  ✓ output/docs/datasheet.pdf  (${size_kb} KB)"
+  else
+    echo "  ✗ output/docs/datasheet.pdf  (missing)"; FAILS=$((FAILS+1))
+  fi
+fi
+
+if [[ "$WANT_EXTRA" -eq 1 ]]; then
   echo "--- extended outputs (need extra deps) ---"
   kibot_out ibom
-  kibot_out render_top
-  kibot_out render_bottom
 fi
 
 echo ""
