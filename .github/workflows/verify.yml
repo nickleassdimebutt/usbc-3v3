@@ -50,7 +50,13 @@ jobs:
           ls -la /usr/share/kicad/footprints/ 2>/dev/null | head -5
 
       - name: Install netlistsvg
-        run: sudo npm install -g netlistsvg
+        run: |
+          # Retry up to 3 times — npm registry occasionally hands out ECONNRESET on cold runners.
+          for i in 1 2 3; do
+            sudo npm install -g netlistsvg && break
+            echo "netlistsvg install attempt $i failed; retrying after 5s..."
+            sleep 5
+          done
 
       - name: Install circuit_toolkit (with docs + sim extras)
         run: |
