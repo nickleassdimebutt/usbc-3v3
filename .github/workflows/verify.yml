@@ -27,7 +27,11 @@ jobs:
             libngspice0 \
             nodejs \
             npm \
-            poppler-utils
+            poppler-utils \
+            inkscape \
+            libcairo2-dev \
+            libgirepository1.0-dev \
+            pkg-config
 
       - name: Install netlistsvg
         run: sudo npm install -g netlistsvg
