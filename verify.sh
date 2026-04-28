@@ -8,9 +8,12 @@
 # Modes are composable; for example: ./verify.sh --datasheet --sim
 set -euo pipefail
 
-KICAD_CLI="C:/Program Files/KiCad/10.0/bin/kicad-cli.exe"
-KICAD_PY="C:/Program Files/KiCad/10.0/bin/python.exe"
-KIBOT="C:/Users/nicho/OneDrive/Documents/KiCad/10.0/3rdparty/Python311/Scripts/kibot.exe"
+# Tooling paths — overridable via env so the same script runs on Windows
+# (KiCad bundled Python at C:/Program Files/...) and Linux CI runners
+# (system python3 + apt kicad-cli).
+KICAD_CLI="${KICAD_CLI:-C:/Program Files/KiCad/10.0/bin/kicad-cli.exe}"
+KICAD_PY="${KICAD_PY:-C:/Program Files/KiCad/10.0/bin/python.exe}"
+KIBOT="${KIBOT:-C:/Users/nicho/OneDrive/Documents/KiCad/10.0/3rdparty/Python311/Scripts/kibot.exe}"
 PCB="usbc-3v3.kicad_pcb"
 CONFIG=".kibot.yaml"
 FAILS=0

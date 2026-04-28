@@ -1,0 +1,97 @@
+name: verify
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  drc-fab-sim:
+    name: DRC + fab + SPICE pre-flight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install KiCad 9 (stable, has the same .kicad_pcb format as 10)
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-9.0-releases
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            kicad \
+            kicad-libraries \
+            ngspice \
+            libngspice0 \
+            nodejs \
+            npm \
+            poppler-utils
+
+      - name: Install netlistsvg
+        run: sudo npm install -g netlistsvg
+
+      - name: Install circuit_toolkit (with docs + sim extras)
+        run: |
+          # KiCad's bundled Python on Linux IS the system /usr/bin/python3 — pcbnew is in
+          # /usr/lib/python3/dist-packages and importable directly. So we install into
+          # the system Python, not a venv (a venv would not see pcbnew).
+          sudo /usr/bin/python3 -m pip install --break-system-packages \
+            "git+https://github.com/nickleassdimebutt/kicad-claude-toolkit.git#subdirectory=python/circuit_toolkit[docs,sim]"
+
+      - name: Sanity check (KiCad + ngspice + PySpice + pcbnew importable)
+        run: |
+          kicad-cli version
+          ngspice -v 2>&1 | head -3 || true
+          python3 -c "import pcbnew; print('pcbnew OK', pcbnew.GetBuildVersion())"
+          python3 -c "import PySpice; print('PySpice', PySpice.__version__)"
+          python3 -c "from circuit_toolkit.sim import simulate_op; print('sim OK')"
+
+      - name: Build (PCB + schematic + BOM + sim + datasheet)
+        env:
+          KICAD_CLI: /usr/bin/kicad-cli
+          KICAD_PY:  /usr/bin/python3
+        run: |
+          python3 build.py --datasheet --sim --monte-carlo-runs 30
+
+      - name: DRC
+        env:
+          KICAD_CLI: /usr/bin/kicad-cli
+        run: |
+          mkdir -p output/drc
+          kicad-cli pcb drc \
+            --output output/drc/drc_report.txt \
+            --units mm \
+            usbc-3v3.kicad_pcb
+          # Fail the job if any DRC errors
+          errors=$(grep -c "; error" output/drc/drc_report.txt || true)
+          unconn=$(grep -E "Found [^0].*unconnected" output/drc/drc_report.txt || true)
+          echo "DRC: $errors errors; unconnected line: $unconn"
+          test "${errors:-0}" -eq 0
+          test -z "$unconn"
+
+      - name: Verify required artefacts exist
+        run: |
+          set -e
+          test -s usbc-3v3.kicad_pcb
+          test -s output/docs/datasheet.pdf
+          for n in transient load_step line_reg load_reg temp_sweep monte_carlo; do
+            test -s "output/sim/${n}.png" || (echo "missing $n.png" && exit 1)
+          done
+
+      - name: Upload artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usbc-3v3-build-${{ github.sha }}
+          path: |
+            usbc-3v3.kicad_pcb
+            output/docs/datasheet.pdf
+            output/docs/schematic.svg
+            output/render/*.png
+            output/sim/*.png
+            output/drc/drc_report.txt
+            output/fab/bom/*.csv
+          if-no-files-found: warn
+          retention-days: 30
