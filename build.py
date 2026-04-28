@@ -93,8 +93,19 @@ def _build_one(output_v: float, project_root: Path, args: argparse.Namespace) ->
         render_dir = project_root / "output/render"
         docs_dir = project_root / "output/docs"
         print(f"\n  → 3D renders: {render_dir.relative_to(PROJECT_DIR)}/")
-        from circuit_toolkit.builders import render_pcb, build_datasheet
+        from circuit_toolkit.builders import render_pcb, build_datasheet, plot_pcbdraw
         render_pcb(pcb_path, render_dir, sides=("top", "bottom"))
+
+        print(f"  → pcbdraw stylized views")
+        try:
+            plot_pcbdraw(pcb_path, render_dir,
+                         sides=("front", "back"), to_png=True, dpi=200)
+            pcbdraw_front = render_dir / "pcbdraw_front.png"
+            pcbdraw_back = render_dir / "pcbdraw_back.png"
+        except Exception as e:
+            print(f"     [warning] pcbdraw failed: {e}")
+            pcbdraw_front = None
+            pcbdraw_back = None
 
         pdf_path = docs_dir / "datasheet.pdf"
         print(f"  → Datasheet PDF: {pdf_path.relative_to(PROJECT_DIR)}")
@@ -104,6 +115,8 @@ def _build_one(output_v: float, project_root: Path, args: argparse.Namespace) ->
             description=f"USB-C → {output_v:g} V LDO power board",
             render_top=render_dir / "render_top.png",
             render_bottom=render_dir / "render_bottom.png",
+            pcbdraw_front=pcbdraw_front,
+            pcbdraw_back=pcbdraw_back,
             schematic_svg=schematic_svg,
             bringup_md=PROJECT_DIR / "bringup.md",
             sim_dir=sim_dir if args.sim else None,

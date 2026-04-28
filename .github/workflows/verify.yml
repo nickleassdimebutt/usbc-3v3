@@ -37,8 +37,9 @@ jobs:
           # KiCad's bundled Python on Linux IS the system /usr/bin/python3 — pcbnew is in
           # /usr/lib/python3/dist-packages and importable directly. So we install into
           # the system Python, not a venv (a venv would not see pcbnew).
+          # PEP 508 syntax: name[extras] @ git+url to attach extras to a VCS install.
           sudo /usr/bin/python3 -m pip install --break-system-packages \
-            "git+https://github.com/nickleassdimebutt/kicad-claude-toolkit.git#subdirectory=python/circuit_toolkit[docs,sim]"
+            "circuit_toolkit[docs,sim] @ git+https://github.com/nickleassdimebutt/kicad-claude-toolkit.git#subdirectory=python/circuit_toolkit"
 
       - name: Sanity check (KiCad + ngspice + PySpice + pcbnew importable)
         run: |
