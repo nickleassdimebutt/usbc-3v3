@@ -30,8 +30,6 @@ jobs:
             kicad-symbols \
             kicad-templates \
             ngspice \
-            libngspice0 \
-            libngspice0-dev \
             nodejs \
             npm \
             poppler-utils \
@@ -67,26 +65,26 @@ jobs:
           sudo /usr/bin/python3 -m pip install --break-system-packages \
             "circuit_toolkit[docs,sim] @ git+https://github.com/nickleassdimebutt/kicad-claude-toolkit.git#subdirectory=python/circuit_toolkit"
 
-      - name: Sanity check (KiCad + ngspice + PySpice + pcbnew importable)
+      - name: Sanity check (KiCad + ngspice CLI + pcbnew + sim importable)
         run: |
           kicad-cli version
-          ngspice -v 2>&1 | head -3 || true
+          # ngspice -v exits 0 silently when invoked non-interactively without
+          # a deck — use --version (which the CLI does honour) or just probe
+          # presence on PATH.
+          which ngspice && ngspice --version 2>&1 | head -3 || true
           python3 -c "import pcbnew; print('pcbnew OK', pcbnew.GetBuildVersion())"
-          python3 -c "import PySpice; print('PySpice', PySpice.__version__)"
           python3 -c "from circuit_toolkit.sim import simulate_op; print('sim OK')"
 
-      - name: Build (PCB + schematic + BOM + datasheet — no sim)
+      - name: Build (PCB + schematic + BOM + datasheet + SPICE pre-flight)
         env:
           KICAD_CLI: /usr/bin/kicad-cli
           KICAD_PY:  /usr/bin/python3
+          NGSPICE:   /usr/bin/ngspice
         run: |
-          # NOTE: --sim deliberately omitted on this runner. Ubuntu 24.04
-          # ships ngspice v42, which exposes API changes PySpice 1.5
-          # ("Unsupported Ngspice version 42") doesn't yet handle and
-          # silently fails .include of subckt models. SPICE pre-flight
-          # is verified locally against KiCad's bundled ngspice instead;
-          # if you need it in CI, pin ngspice ≤ v40 from a custom build.
-          python3 build.py --datasheet --monte-carlo-runs 30
+          # SPICE pre-flight re-enabled: the toolkit now invokes ngspice via
+          # subprocess rather than PySpice's DLL bindings, so it works on any
+          # ngspice CLI the system provides regardless of version.
+          python3 build.py --datasheet --sim --monte-carlo-runs 30
 
       - name: DRC
         env:
@@ -112,6 +110,9 @@ jobs:
           test -s output/render/render_top.png
           test -s output/render/render_bottom.png
           test -s output/fab/bom/bom.csv
+          for n in transient load_step line_reg load_reg temp_sweep monte_carlo; do
+            test -s "output/sim/${n}.png" || (echo "missing sim/${n}.png" && exit 1)
+          done
 
       - name: Upload artefacts
         if: always()
